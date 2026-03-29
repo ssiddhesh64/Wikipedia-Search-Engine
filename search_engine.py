@@ -6,8 +6,9 @@ from nltk.corpus import stopwords
 class SearchEngine:
     def __init__(self, db_path):
         self.db_path = db_path
-        self.index = defaultdict(list)
+        self.index = defaultdict(lambda: defaultdict(int))
         self.doc_store = {}
+        self.stop_words = set(stopwords.words('english'))
     
     def _normalize(self, text):
         return text.lower()
@@ -16,8 +17,7 @@ class SearchEngine:
         return re.findall(r'\b\w+\b', text)
     
     def _remove_stop_words(self, tokens):
-        stop_words = set(stopwords.words('english'))
-        return [token for token in tokens if token not in stop_words]
+        return [token for token in tokens if token not in self.stop_words]
 
     def _process(self, text):
         
@@ -49,7 +49,7 @@ class SearchEngine:
                 self.doc_store[article_id] = title
                 
                 for token, count in freq.items():
-                    self.index[token].append((article_id, count))
+                    self.index[token][article_id] += count
                 
             i += 1
             # print(f"Processed {i * 1000} articles...")
@@ -60,7 +60,7 @@ class SearchEngine:
         results = defaultdict(int)
         
         for token in query_tokens:
-            for article_id, count in self.index.get(token, []):
+            for article_id, count in self.index.get(token, {}).items():
                 results[article_id] += count
                 
         ranked = sorted(results.items(), key=lambda x: x[1], reverse=True)
@@ -69,7 +69,7 @@ class SearchEngine:
 
     def print_results(self, results):
         for article_id, score in results:
-            print(f"Article ID: {article_id}, Title: {self.doc_store[article_id]}, Score: {score}")
+            print(f"Article ID: {article_id}, Title: {self.doc_store.get(article_id, 'Unknown')}, Score: {score}")
             
 if __name__ == "__main__":
     search_engine = SearchEngine("enwiki-20170820.db")

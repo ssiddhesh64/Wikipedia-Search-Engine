@@ -58,8 +58,8 @@ class SearchEngine:
                 for token, count in freq.items():
                     self.index[token][article_id] += count
 
-                if article_id not in self.seen_docs:
-                    self.seen_docs.add(article_id)
+                if article_id not in seen_docs:
+                    seen_docs.add(article_id)
                     self.doc_count += 1
 
                     for token in freq.keys():

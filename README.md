@@ -19,11 +19,30 @@ A simple search engine built on top of a Wikipedia dataset, demonstrating core i
 ## Architecture
 
 ```mermaid
-graph TD
-    A[SQLite Dump 21GB] --> B[Batch Processing Streaming]
-    B --> C[Text Preprocessing]
-    C --> D[Inverted Index In Memory]
-    D --> E[Search and Ranking]
+flowchart LR
+
+    %% -------------------
+    %% Indexing Pipeline
+    %% -------------------
+    subgraph Indexing Flow
+        A["SQLite Dump (21GB)"] --> B["Batch Processing (Streaming)"]
+        B --> C["Text Preprocessing"]
+        C --> D["Inverted Index (In-Memory)"]
+        D --> E["Persist to Disk"]
+    end
+
+    %% -------------------
+    %% Query Pipeline
+    %% -------------------
+    subgraph Query Flow
+        Q1["User Query"] --> Q2["Query Preprocessing"]
+        Q2 --> Q3["Load Index / Lookup"]
+        Q3 --> Q4["Ranking Algorithm"]
+        Q4 --> Q5["Top-K Results"]
+    end
+
+    %% Optional connection
+    E --> Q3
 ```
 
 ---
@@ -47,3 +66,19 @@ CREATE TABLE ARTICLES (
   SECTION_TITLE TEXT,
   SECTION_TEXT TEXT
 );
+```
+
+## Next Steps
+
+### Search Quality Improvements
+- Implement **TF-IDF / BM25 ranking** for better relevance  
+
+### Performance & Scalability
+- Move from in-memory index to a **disk-based inverted index** (optimized for 21GB+)  
+- Implement **caching layer** (e.g., Redis) for frequent queries  
+- Enable **parallel indexing** for faster preprocessing  
+
+### Advanced Features
+- Add **autocomplete / typeahead suggestions**  
+- Implement **highlighting of matched terms** in results  
+- Support **filters** (by section, title, etc.)  

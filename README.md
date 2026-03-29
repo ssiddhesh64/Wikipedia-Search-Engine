@@ -18,16 +18,13 @@ A simple search engine built on top of a Wikipedia dataset, demonstrating core i
 
 ## Architecture
 
-- SQLite Dump (21GB)
-- ↓
-- Batch Processing (Streaming)
-- ↓
-- Text Preprocessing
-- ↓
-- Inverted Index (in-memory)
-- ↓
-- Search + Ranking
-
+```mermaid
+graph TD
+    A[SQLite Dump 21GB] --> B[Batch Processing Streaming]
+    B --> C[Text Preprocessing]
+    C --> D[Inverted Index In Memory]
+    D --> E[Search and Ranking]
+```
 
 ---
 

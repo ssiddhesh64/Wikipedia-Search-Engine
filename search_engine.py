@@ -12,6 +12,9 @@ class SearchEngine:
         self.doc_store = {}
         self.doc_freq = defaultdict(int)
         self.doc_count = 0
+        self.doc_len = defaultdict(
+            int
+        )  # Store document lengths for TF-IDF normalization
         self.stop_words = set(stopwords.words("english"))
 
     def _normalize(self, text):
@@ -54,6 +57,9 @@ class SearchEngine:
 
                 freq = Counter(tokens)
                 self.doc_store[article_id] = title
+                self.doc_len[article_id] += sum(
+                    freq.values()
+                )  # Store document length for TF-IDF normalization
 
                 for token, count in freq.items():
                     self.index[token][article_id] += count
@@ -96,8 +102,11 @@ class SearchEngine:
         for token in query_tokens:
             idf = self._idf(token)
             for article_id, tf in self.index.get(token, {}).items():
-                results[article_id] += tf * idf
+                results[article_id] += (1 + math.log(tf)) * idf
 
+            results[article_id] /= self.doc_len[
+                article_id
+            ]  # Normalize by document length
         ranked = sorted(results.items(), key=lambda x: x[1], reverse=True)
 
         return ranked[:10]

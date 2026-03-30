@@ -154,11 +154,6 @@ class SearchEngine:
         self.doc_store = metadata["doc_store"]
         self.doc_count = metadata["doc_count"]
 
-        self.pos_index = defaultdict(lambda: defaultdict(list))
-        for token in query.split():
-            if token in self.vocab:
-                self.pos_index[token] = self.get_postings(token, dir_path)
-
         print("Index loaded from disk!")
         f.close()
 
@@ -288,7 +283,8 @@ class SearchEngine:
 
         for token in query_tokens:
             idf = self._idf(token)
-            for article_id, positions in self.pos_index.get(token, {}).items():
+            postings = self.get_postings(token)
+            for article_id, positions in postings.items():
                 tf = len(positions)
                 results[article_id] += (1 + math.log(tf)) * idf
 

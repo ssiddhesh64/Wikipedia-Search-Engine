@@ -82,3 +82,44 @@ CREATE TABLE ARTICLES (
 - Add **autocomplete / typeahead suggestions**  
 - Implement **highlighting of matched terms** in results  
 - Support **filters** (by section, title, etc.)  
+
+
+## 📦 Index Storage Format
+
+The search engine uses a **disk-based inverted index** to enable efficient querying without loading the entire dataset into memory.
+
+---
+
+### 🗂️ 1. `metadata.pkl`
+
+Stores global metadata required for ranking and retrieval.
+
+```python
+{
+  "doc_len": {doc_id: int},        # Total terms in each document
+  "doc_freq": {token: int},        # Number of documents containing the token
+  "doc_store": {doc_id: title},    # Mapping of document IDs to titles
+  "doc_count": int                 # Total number of documents
+}
+```
+
+#### postings.bin structure:
+```
+[token postings]
+number_of_docs (int)
+  For each document:
+    → doc_id (int)
+    → term_frequency (int)
+    → positions_count (int)
+    → positions (list of ints)
+```
+
+#### vokab.pkl
+Stores token -> offsets in postings files
+```
+{
+  "machine": 1024,
+  "learning": 2048,
+  ...
+}
+```

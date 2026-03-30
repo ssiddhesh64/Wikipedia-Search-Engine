@@ -2,7 +2,33 @@ from collections import Counter, defaultdict
 import math
 import re
 import sqlite3
-from nltk.corpus import stopwords
+import pickle
+import struct
+import os
+
+STOP_WORDS = {
+    "a",
+    "an",
+    "the",
+    "and",
+    "or",
+    "but",
+    "is",
+    "are",
+    "was",
+    "were",
+    "in",
+    "on",
+    "at",
+    "to",
+    "of",
+    "for",
+    "with",
+    "by",
+    "as",
+    "that",
+    "this",
+}
 
 
 class SearchEngine:
@@ -15,7 +41,28 @@ class SearchEngine:
         self.doc_len = defaultdict(
             int
         )  # Store document lengths for TF-IDF normalization
-        self.stop_words = set(stopwords.words("english"))
+        # self.stop_words = set(stopwords.words("english"))
+        self.stop_words = set(STOP_WORDS)  # Override with custom stop words
+
+    def index_exists(self, dir_path="index_data"):
+        return (
+            os.path.exists(os.path.join(dir_path, "vocab.pkl"))
+            and os.path.exists(os.path.join(dir_path, "metadata.pkl"))
+            and os.path.exists(os.path.join(dir_path, "postings.bin"))
+        )
+
+    def setup(self, query=None, dir_path="index_data", force=False):
+        if self.index_exists(dir_path) and not force:
+            print("Loading existing index...")
+            self.load_index(query, dir_path)
+        else:
+            print("Building index from scratch...")
+            self.build_index()
+
+            if not hasattr(self, "pos_index"):
+                raise Exception("pos_index not built. Required for disk index.")
+
+            self._save_index_to_disk(dir_path)
 
     def _normalize(self, text):
         return text.lower()
@@ -34,6 +81,117 @@ class SearchEngine:
 
         return tokens
 
+    def _save_index_to_disk(self, dir_path="index_data"):
+
+        os.makedirs(dir_path, exist_ok=True)
+
+        vocab = {}
+        offset = 0
+
+        postings_path = os.path.join(dir_path, "postings.bin")
+        vocab_path = os.path.join(dir_path, "vocab.pkl")
+        metadata_path = os.path.join(dir_path, "metadata.pkl")
+
+        with open(postings_path, "wb") as f:
+            for token in sorted(self.pos_index.keys()):
+                postings = self.pos_index[token]  # {doc_id: [positions]}
+
+                vocab[token] = offset
+
+                # number of documents
+                f.write(struct.pack("I", len(postings)))
+                offset += 4
+
+                for doc_id, positions in postings.items():
+                    tf = len(positions)
+
+                    # doc_id + tf
+                    f.write(struct.pack("II", doc_id, tf))
+                    offset += 8
+
+                    # positions count
+                    f.write(struct.pack("I", tf))
+                    offset += 4
+
+                    # positions list
+                    for pos in positions:
+                        f.write(struct.pack("I", pos))
+                        offset += 4
+
+        # Save vocab
+        with open(vocab_path, "wb") as f:
+            pickle.dump(vocab, f)
+
+        # Save metadata
+        metadata = {
+            "doc_len": dict(self.doc_len),
+            "doc_freq": dict(self.doc_freq),
+            "doc_store": self.doc_store,
+            "doc_count": self.doc_count,
+        }
+
+        with open(metadata_path, "wb") as f:
+            pickle.dump(metadata, f)
+
+        print("Index saved to disk!")
+        f.close()
+
+    def load_index(self, query=None, dir_path="index_data"):
+
+        vocab_path = os.path.join(dir_path, "vocab.pkl")
+        metadata_path = os.path.join(dir_path, "metadata.pkl")
+
+        # Load vocab
+        with open(vocab_path, "rb") as f:
+            self.vocab = pickle.load(f)
+
+        # Load metadata
+        with open(metadata_path, "rb") as f:
+            metadata = pickle.load(f)
+
+        self.doc_len = defaultdict(int, metadata["doc_len"])
+        self.doc_freq = defaultdict(int, metadata["doc_freq"])
+        self.doc_store = metadata["doc_store"]
+        self.doc_count = metadata["doc_count"]
+
+        self.pos_index = defaultdict(lambda: defaultdict(list))
+        for token in query.split():
+            if token in self.vocab:
+                self.pos_index[token] = self.get_postings(token, dir_path)
+
+        print("Index loaded from disk!")
+        f.close()
+
+    def get_postings(self, token, dir_path="index_data"):
+        if token not in self.vocab:
+            return []
+
+        postings_path = os.path.join(dir_path, "postings.bin")
+        # Open postings file (keep open for fast reads)
+        self.postings_file = open(postings_path, "rb")
+
+        offset = self.vocab[token]
+        self.postings_file.seek(offset)
+
+        # Read number of documents
+        num_docs = struct.unpack("I", self.postings_file.read(4))[0]
+
+        postings = defaultdict(list)
+        for _ in range(num_docs):
+            doc_id, tf = struct.unpack("II", self.postings_file.read(8))
+
+            pos_count = struct.unpack("I", self.postings_file.read(4))[0]
+
+            positions = []
+            for _ in range(pos_count):
+                pos = struct.unpack("I", self.postings_file.read(4))[0]
+                positions.append(pos)
+
+            postings[doc_id] = positions
+
+        self.postings_file.close()
+        return postings
+
     def build_index(self):
 
         conn = sqlite3.connect(self.db_path)
@@ -47,7 +205,7 @@ class SearchEngine:
 
         seen_docs = set()
         i = 0
-        while i < 2:
+        while i < 100:  # Limit to first 100k articles for testing
             rows = cursor.fetchmany(1000)
             if not rows:
                 break
@@ -56,15 +214,13 @@ class SearchEngine:
                 tokens = self._process(text)
 
                 self.doc_store[article_id] = title
-                self.doc_len[article_id] += sum(
-                    len(tokens)
+                self.doc_len[article_id] += len(
+                    tokens
                 )  # Store document length for TF-IDF normalization
 
                 for pos, token in enumerate(tokens):
                     self.pos_index[token][article_id].append(pos)
 
-                # for token, count in freq.items():
-                #     self.pos_index[token][article_id]
                 freq = Counter(tokens)
                 if article_id not in seen_docs:
                     seen_docs.add(article_id)
@@ -74,7 +230,7 @@ class SearchEngine:
                         self.doc_freq[token] += 1
 
             i += 1
-            # print(f"Processed {i * 1000} articles...")
+            print(f"Processed {i * 1000} articles...")
         conn.close()
 
     def _idf(self, token):
@@ -132,7 +288,8 @@ class SearchEngine:
 
         for token in query_tokens:
             idf = self._idf(token)
-            for article_id, tf in self.pos_index.get(token, {}).items():
+            for article_id, positions in self.pos_index.get(token, {}).items():
+                tf = len(positions)
                 results[article_id] += (1 + math.log(tf)) * idf
 
         for article_id in results:
@@ -159,8 +316,9 @@ class SearchEngine:
 
 if __name__ == "__main__":
     search_engine = SearchEngine("enwiki-20170820.db")
-    search_engine.build_index()
 
-    results = search_engine.search_simple("machine learning")
+    query = "machine learning"
+    search_engine.setup(query=query)  # Force rebuild index for testing
+    results = search_engine.search_tfidf(query)
     print("\nSearch Results:")
     search_engine.print_results(results)

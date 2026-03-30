@@ -1,1 +1,6 @@
 enwiki-20170820.db
+index_data**
+.DS_Store
+*.log
+*.tmp
+*.bak

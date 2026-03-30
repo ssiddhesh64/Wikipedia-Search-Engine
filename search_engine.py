@@ -8,7 +8,7 @@ from nltk.corpus import stopwords
 class SearchEngine:
     def __init__(self, db_path):
         self.db_path = db_path
-        self.index = defaultdict(lambda: defaultdict(int))
+        self.pos_index = defaultdict(lambda: defaultdict(list))
         self.doc_store = {}
         self.doc_freq = defaultdict(int)
         self.doc_count = 0
@@ -55,15 +55,17 @@ class SearchEngine:
                 text = title + " " + (section_text or "")
                 tokens = self._process(text)
 
-                freq = Counter(tokens)
                 self.doc_store[article_id] = title
                 self.doc_len[article_id] += sum(
-                    freq.values()
+                    len(tokens)
                 )  # Store document length for TF-IDF normalization
 
-                for token, count in freq.items():
-                    self.index[token][article_id] += count
+                for pos, token in enumerate(tokens):
+                    self.pos_index[token][article_id].append(pos)
 
+                # for token, count in freq.items():
+                #     self.pos_index[token][article_id]
+                freq = Counter(tokens)
                 if article_id not in seen_docs:
                     seen_docs.add(article_id)
                     self.doc_count += 1
@@ -88,12 +90,41 @@ class SearchEngine:
         results = defaultdict(int)
 
         for token in query_tokens:
-            for article_id, count in self.index.get(token, {}).items():
+            for article_id, count in self.pos_index.get(token, {}).items():
                 results[article_id] += count
 
         ranked = sorted(results.items(), key=lambda x: x[1], reverse=True)
 
         return ranked[:10]
+
+    def phrase_search(self, query):
+        query_tokens = self._process(query)
+        if not query_tokens:
+            return []
+
+        postings = [self.pos_index.get(token, {}) for token in query_tokens]
+
+        common_docs = set(postings[0].keys())
+        for p in postings[1:]:
+            common_docs &= set(p.keys())
+
+        results = []
+        for doc_id in common_docs:
+            positions_list = [p[doc_id] for p in postings]
+
+            pos_sets = [set(positions) for positions in positions_list]
+            for pos in positions_list[0]:
+                match = True
+                for i in range(1, len(pos_sets)):
+                    next_positions = pos_sets[i]
+                    if (pos + i) not in next_positions:
+                        match = False
+                        break
+                if match:
+                    results.append(doc_id)
+                    break  # Stop after the first match in this document
+
+        return results
 
     def search_tfidf(self, query):
         query_tokens = self._process(query)
@@ -101,12 +132,20 @@ class SearchEngine:
 
         for token in query_tokens:
             idf = self._idf(token)
-            for article_id, tf in self.index.get(token, {}).items():
+            for article_id, tf in self.pos_index.get(token, {}).items():
                 results[article_id] += (1 + math.log(tf)) * idf
 
+        for article_id in results:
             results[article_id] /= self.doc_len[
                 article_id
             ]  # Normalize by document length
+
+        # phrase boost
+        phrase_docs = self.phrase_search(query)
+        for doc_id in phrase_docs:
+            if doc_id in results:
+                results[doc_id] *= 1.5  # Boost score for phrase matches
+
         ranked = sorted(results.items(), key=lambda x: x[1], reverse=True)
 
         return ranked[:10]

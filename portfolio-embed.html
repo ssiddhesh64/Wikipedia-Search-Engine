@@ -223,7 +223,15 @@
             { id: 9, title: "Inverted index", text: "In computer science, an inverted index is a database index data structure storing a mapping from words or tokens to their locations in a document or database. Inverted indices are the primary data structure used by search engines and information retrieval systems to achieve sub-millisecond query responses across billions of documents. Positional inverted indices also store word offsets for exact phrase search." },
             { id: 10, title: "Okapi BM25", text: "Okapi BM25 is a state-of-the-art probabilistic ranking function widely used by search engines to estimate the relevance of documents to search queries. BM25 improves upon classical TF-IDF by incorporating document length normalization and non-linear term frequency saturation, preventing excessively long documents from unfairly dominating search results." },
             { id: 11, title: "Database", text: "A database is an organized collection of data stored and accessed electronically from a computer system. Database management systems (DBMS) such as PostgreSQL, MySQL, and SQLite provide mechanisms for data querying, indexing, transaction processing, and concurrency control. Modern databases support relational schemas, full-text inverted indices, and distributed replication." },
-            { id: 12, title: "Distributed computing", text: "Distributed computing is a field of computer science that studies distributed systems consisting of autonomous computing nodes that communicate over a network. Large-scale search engines, cloud databases, and machine learning clusters rely on distributed computing frameworks to partition inverted index postings, scale storage, and parallelize ranking computations." }
+            { id: 12, title: "Distributed computing", text: "Distributed computing is a field of computer science that studies distributed systems consisting of autonomous computing nodes that communicate over a network. Large-scale search engines, cloud databases, and machine learning clusters rely on distributed computing frameworks to partition inverted index postings, scale storage, and parallelize ranking computations." },
+            { id: 13, title: "Quantum computing", text: "Quantum computing is a multidisciplinary field comprising aspects of computer science, physics, and mathematics that utilizes quantum mechanics to solve complex problems faster than classical computers. The field includes quantum hardware development and quantum algorithm design, using qubits that exhibit superposition and quantum entanglement." },
+            { id: 14, title: "Python (programming language)", text: "Python is a high-level, general-purpose programming language widely adopted for data science, machine learning, artificial intelligence, and web development. Python features a rich standard library and extensive package ecosystem, making it a popular choice for prototyping search engines, natural language processing pipelines, and data structures." },
+            { id: 15, title: "Data structure", text: "In computer science, a data structure is a data organization, management, and storage format that enables efficient access and modification. Common data structures include arrays, linked lists, hash tables, trees, and graphs. Search engines rely heavily on hash tables, inverted indices, and tries for rapid keyword lookups." },
+            { id: 16, title: "World Wide Web", text: "The World Wide Web is an information system where documents and web resources are identified by URLs and accessible over the Internet. The rapid growth of web pages created an urgent need for automated search engines, web crawlers, and information retrieval algorithms capable of indexing billions of hyperlinked HTML documents." },
+            { id: 17, title: "Operating system", text: "An operating system (OS) is system software that manages computer hardware, software resources, and provides common services for computer programs. Core components include the kernel, file system, memory management, and process scheduling. High-performance databases and search engines optimize I/O using OS page caches, file seeks, and memory-mapped files." },
+            { id: 18, title: "Algorithm", text: "In mathematics and computer science, an algorithm is a finite sequence of rigorous instructions used to perform a computation or solve a problem. Algorithms are evaluated by time complexity and space complexity using Big O notation. Search engines optimize query algorithms to achieve logarithmic or near-constant time retrieval." },
+            { id: 19, title: "Cloud computing", text: "Cloud computing is the on-demand availability of computer system resources, especially data storage and computing power, without direct active management by the user. Major search engines run in large-scale cloud data centers distributed globally to provide low latency, redundancy, and high availability." },
+            { id: 20, title: "TF-IDF", text: "In information retrieval, TF-IDF (term frequency-inverse document frequency) is a numerical statistic reflecting how important a word is to a document within a collection or corpus. Search engines frequently use TF-IDF variants to score document relevance against multi-word user queries, balancing term frequency within a document against corpus-wide rarity." }
         ];
 
         // In-browser Inverted Index Construction
@@ -233,7 +241,7 @@
         const docFreq = {};
 
         function tokenize(text) {
-            return (text.toLowerCase().match(/\\b\\w+\\b/g) || []).filter(w => !STOP_WORDS.has(w));
+            return (text.toLowerCase().match(/\b\w+\b/g) || []).filter(w => !STOP_WORDS.has(w));
         }
 
         // Build index on load
@@ -356,7 +364,7 @@
         }
 
         function generateSnippet(text, qTokens) {
-            const words = text.split(/\\s+/);
+            const words = text.split(/\s+/);
             const tokenSet = new Set(qTokens.map(t => t.toLowerCase()));
             let matchIdx = 0;
             for (let i = 0; i < words.length; i++) {

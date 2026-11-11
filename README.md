@@ -1,4 +1,4 @@
-# ⚡ Wikipedia Information Retrieval Engine
+# Wikipedia Information Retrieval Engine
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg?style=flat&logo=python)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -9,7 +9,7 @@ A high-performance, disk-based information retrieval (IR) engine built from scra
 
 ---
 
-## 📸 Interactive Web Demo
+## Interactive Web Demo
 
 The project includes an interactive web dashboard and REST API powered entirely by Python's built-in `http.server`:
 
@@ -26,7 +26,7 @@ python3 app.py
 
 ---
 
-## 🏛️ System Architecture
+## System Architecture
 
 ```mermaid
 flowchart TD
@@ -55,7 +55,7 @@ flowchart TD
 
 ---
 
-## 📦 Binary Inverted Index Specification
+## Binary Inverted Index Specification
 
 To handle large dumps (up to 21GB+) without RAM exhaustion, postings lists are packed into a single binary file (`postings.bin`) and indexed by byte offset in `vocab.pkl`:
 
@@ -81,7 +81,7 @@ vocab.pkl:
 
 ---
 
-## 🚀 Quickstart (30 Seconds)
+## Quickstart (30 Seconds)
 
 ### 1. Seed Sample Articles
 No need to download a 21GB dump for testing! Seed sample articles into SQLite:
@@ -125,7 +125,7 @@ python3 test_search_engine.py
 
 ---
 
-## 🌐 Embed in Your Portfolio Website
+## Embed in Your Portfolio Website
 
 There are two easy ways to showcase this project on your personal portfolio:
 
@@ -157,7 +157,7 @@ Run the Python backend server (`python3 app.py`) and point the iframe to your ho
 
 ---
 
-## 📊 Supported Ranking Algorithms
+## Supported Ranking Algorithms
 
 | Algorithm | Method | Characteristics |
 | :--- | :--- | :--- |
@@ -168,7 +168,7 @@ Run the Python backend server (`python3 app.py`) and point the iframe to your ho
 
 ---
 
-## 🗃️ Dataset
+## Dataset
 
 - SQLite Wikipedia dump: `enwiki-20170820.db`
 - [Kaggle Dataset Source](https://www.kaggle.com/datasets/jkkphys/english-wikipedia-articles-20170820-sqlite/)
@@ -184,5 +184,5 @@ Run the Python backend server (`python3 app.py`) and point the iframe to your ho
 
 ---
 
-## 📄 License
+## License
 MIT License. Created as an educational systems and information retrieval project.

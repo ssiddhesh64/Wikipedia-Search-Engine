@@ -299,38 +299,53 @@ HTML_PAGE = """<!DOCTYPE html>
         }
 
         let suggestTimeout = null;
+        let searchTimeout = null;
 
         function onQueryInput(val) {
             clearTimeout(suggestTimeout);
+            clearTimeout(searchTimeout);
             const box = document.getElementById('suggest-box');
             val = val.trim();
-            if (!val || val.length < 2) {
+
+            if (!val) {
                 box.classList.add('hidden');
+                document.getElementById('results-container').innerHTML = '';
+                document.getElementById('search-metrics').classList.add('hidden');
                 return;
             }
 
+            // 1. Live typeahead suggestions (100ms)
             suggestTimeout = setTimeout(async () => {
-                try {
-                    const res = await fetch(`/api/suggest?q=${encodeURIComponent(val)}`);
-                    const data = await res.json();
-                    if (data.suggestions && data.suggestions.length > 0) {
-                        box.innerHTML = data.suggestions.map(s => `
-                            <div 
-                                class="px-4 py-2 hover:bg-sky-50 dark:hover:bg-slate-800 cursor-pointer text-sm font-medium flex items-center justify-between"
-                                onclick="selectSuggestion('${escapeHtml(s)}')"
-                            >
-                                <span>🔍 ${escapeHtml(s)}</span>
-                                <span class="text-xs text-slate-400">suggestion</span>
-                            </div>
-                        `).join('');
-                        box.classList.remove('hidden');
-                    } else {
+                if (val.length >= 2) {
+                    try {
+                        const res = await fetch(`/api/suggest?q=${encodeURIComponent(val)}`);
+                        const data = await res.json();
+                        if (data.suggestions && data.suggestions.length > 0) {
+                            box.innerHTML = data.suggestions.map(s => `
+                                <div 
+                                    class="px-4 py-2 hover:bg-sky-50 dark:hover:bg-slate-800 cursor-pointer text-sm font-medium flex items-center justify-between"
+                                    onclick="selectSuggestion('${escapeHtml(s)}')"
+                                >
+                                    <span>🔍 ${escapeHtml(s)}</span>
+                                    <span class="text-xs text-slate-400">suggestion</span>
+                                </div>
+                            `).join('');
+                            box.classList.remove('hidden');
+                        } else {
+                            box.classList.add('hidden');
+                        }
+                    } catch (e) {
                         box.classList.add('hidden');
                     }
-                } catch (e) {
+                } else {
                     box.classList.add('hidden');
                 }
-            }, 150);
+            }, 100);
+
+            // 2. Live search execution as user types (250ms debounce)
+            searchTimeout = setTimeout(() => {
+                executeSearch();
+            }, 250);
         }
 
         function selectSuggestion(word) {

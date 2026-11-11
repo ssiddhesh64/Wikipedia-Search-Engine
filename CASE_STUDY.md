@@ -7,7 +7,7 @@
 
 ---
 
-## 📌 Executive Summary
+## Executive Summary
 
 Modern search engines operate over corpora far exceeding available system memory. When querying multi-gigabyte or terabyte document sets, naive database substring queries (`LIKE '%term%'`) degrade to $O(N)$ full table scans, quickly resulting in multi-second query latencies and CPU exhaustion.
 
@@ -16,11 +16,11 @@ This project implements a complete, production-grade **Information Retrieval (IR
 - **Variable Byte (VByte) & Delta (Gap) compression**, cutting disk storage requirements by over 50%.
 - **Okapi BM25** probabilistic ranking with length normalization and non-linear term saturation.
 - Multi-word **phrase matching** verified through exact positional offset lists.
-- An interactive, dark-mode web application and embeddable portfolio component delivering sub-millisecond responses (`⚡ < 1 ms`).
+- An interactive, dark-mode web application and embeddable portfolio component delivering sub-millisecond responses (`< 1 ms`).
 
 ---
 
-## 🏛️ System Architecture & Data Flow
+## System Architecture & Data Flow
 
 ```mermaid
 flowchart TD
@@ -49,7 +49,7 @@ flowchart TD
 
 ---
 
-## ⚙️ Key Technical Challenges & Solutions
+## Key Technical Challenges & Solutions
 
 ### 1. The Memory Bottleneck: In-Memory vs. On-Disk Inverted Indices
 * **The Problem:** In-memory inverted indices store `{token: {doc_id: [positions]}}`. For a 21GB Wikipedia dump, loading postings lists into Python memory causes immediate Out-Of-Memory (OOM) crashes.
@@ -74,7 +74,7 @@ $$\text{Score}(D, Q) = \sum_{i=1}^{n} \text{IDF}(q_i) \cdot \frac{f(q_i, D) \cdo
 
 ---
 
-## 📊 Benchmark & Latency Analysis
+## Benchmark & Latency Analysis
 
 We benchmarked the search engine across diverse multi-word queries against standard database substring searches:
 
@@ -88,19 +88,9 @@ We benchmarked the search engine across diverse multi-word queries against stand
 
 ---
 
-## 💻 Engineering Practices & Reproducibility
+## Engineering Practices & Reproducibility
 
-- **Automated CI/CD:** GitHub Actions test matrix validating Python 3.9 through 3.12 on every push.
+- **Automated CI/CD:** GitHub Actions test matrix validating Python 3.10 through 3.13 on every push.
 - **Comprehensive Unit Testing:** Testing vocabulary parsing, binary struct packing, VByte decompression, BM25 scoring, and phrase search.
 - **Containerized Deployment:** Dockerfile and Docker Compose configurations for one-command deployment to cloud hosts.
 - **Zero Heavy Dependencies:** Engineered exclusively using Python standard library modules (`struct`, `sqlite3`, `pickle`, `http.server`, `math`, `collections`).
-
----
-
-## 🎯 How to Showcase This in an Interview
-
-When discussing this project with engineering interviewers, focus on:
-1. **Trade-offs:** Explaining why binary postings offsets are chosen over loading the full index into RAM.
-2. **Compression:** Walking through the bitwise operations in VByte continuation bits and why delta gaps maximize compression ratios.
-3. **Information Retrieval Nuances:** Contrasting boolean search, TF-IDF, and BM25 length penalty mechanics.
-

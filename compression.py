@@ -124,3 +124,4 @@ def decompress_postings_list(byte_stream: bytes) -> dict:
         postings[doc_id] = delta_decode(pos_deltas)
 
     return postings
+

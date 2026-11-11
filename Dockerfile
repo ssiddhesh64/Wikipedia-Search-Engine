@@ -18,3 +18,4 @@ ENV PYTHONUNBUFFERED=1
 
 # Start zero-dependency web server
 CMD ["python3", "app.py"]
+

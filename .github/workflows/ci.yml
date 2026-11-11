@@ -36,3 +36,4 @@ jobs:
     - name: Run Benchmarks
       run: |
         python benchmark.py --iter 3
+

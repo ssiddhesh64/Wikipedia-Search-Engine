@@ -7,6 +7,7 @@ import re
 import sqlite3
 import struct
 import time
+from compression import compress_postings_list, decompress_postings_list
 
 STOP_WORDS = {
     "a",
@@ -47,13 +48,17 @@ class SearchEngine:
         self.vocab = {}
 
     def index_exists(self, dir_path="index_data"):
+        has_postings = (
+            os.path.exists(os.path.join(dir_path, "postings.bin"))
+            or os.path.exists(os.path.join(dir_path, "postings.vbyte"))
+        )
         return (
             os.path.exists(os.path.join(dir_path, "vocab.pkl"))
             and os.path.exists(os.path.join(dir_path, "metadata.pkl"))
-            and os.path.exists(os.path.join(dir_path, "postings.bin"))
+            and has_postings
         )
 
-    def setup(self, query=None, dir_path="index_data", force=False):
+    def setup(self, query=None, dir_path="index_data", force=False, compress=False):
         if self.index_exists(dir_path) and not force:
             print("Loading existing index...")
             self.load_index(query, dir_path)
@@ -68,7 +73,7 @@ class SearchEngine:
             if not hasattr(self, "pos_index"):
                 raise Exception("pos_index not built. Required for disk index.")
 
-            self._save_index_to_disk(dir_path)
+            self._save_index_to_disk(dir_path, compress=compress)
             return True
 
     def _normalize(self, text):
@@ -88,42 +93,57 @@ class SearchEngine:
 
         return tokens
 
-    def _save_index_to_disk(self, dir_path="index_data"):
+    def _save_index_to_disk(self, dir_path="index_data", compress=False):
 
         os.makedirs(dir_path, exist_ok=True)
 
         vocab = {}
         offset = 0
 
-        postings_path = os.path.join(dir_path, "postings.bin")
+        postings_bin = os.path.join(dir_path, "postings.bin")
+        postings_vbyte = os.path.join(dir_path, "postings.vbyte")
         vocab_path = os.path.join(dir_path, "vocab.pkl")
         metadata_path = os.path.join(dir_path, "metadata.pkl")
 
-        with open(postings_path, "wb") as f:
-            for token in sorted(self.pos_index.keys()):
-                postings = self.pos_index[token]  # {doc_id: [positions]}
+        if compress:
+            if os.path.exists(postings_bin):
+                os.remove(postings_bin)
+            with open(postings_vbyte, "wb") as f:
+                for token in sorted(self.pos_index.keys()):
+                    postings = self.pos_index[token]
+                    compressed = compress_postings_list(postings)
+                    vocab[token] = offset
+                    f.write(struct.pack("I", len(compressed)))
+                    f.write(compressed)
+                    offset += 4 + len(compressed)
+        else:
+            if os.path.exists(postings_vbyte):
+                os.remove(postings_vbyte)
+            with open(postings_bin, "wb") as f:
+                for token in sorted(self.pos_index.keys()):
+                    postings = self.pos_index[token]  # {doc_id: [positions]}
 
-                vocab[token] = offset
+                    vocab[token] = offset
 
-                # number of documents
-                f.write(struct.pack("I", len(postings)))
-                offset += 4
-
-                for doc_id, positions in postings.items():
-                    tf = len(positions)
-
-                    # doc_id + tf
-                    f.write(struct.pack("II", doc_id, tf))
-                    offset += 8
-
-                    # positions count
-                    f.write(struct.pack("I", tf))
+                    # number of documents
+                    f.write(struct.pack("I", len(postings)))
                     offset += 4
 
-                    # positions list
-                    for pos in positions:
-                        f.write(struct.pack("I", pos))
+                    for doc_id, positions in postings.items():
+                        tf = len(positions)
+
+                        # doc_id + tf
+                        f.write(struct.pack("II", doc_id, tf))
+                        offset += 8
+
+                        # positions count
+                        f.write(struct.pack("I", tf))
                         offset += 4
+
+                        # positions list
+                        for pos in positions:
+                            f.write(struct.pack("I", pos))
+                            offset += 4
 
         # Save vocab
         self.vocab = vocab
@@ -136,12 +156,14 @@ class SearchEngine:
             "doc_freq": dict(self.doc_freq),
             "doc_store": self.doc_store,
             "doc_count": self.doc_count,
+            "compressed": compress,
         }
 
         with open(metadata_path, "wb") as f:
             pickle.dump(metadata, f)
 
-        print("Index saved to disk!")
+        mode_str = " (VByte Compressed)" if compress else " (Raw 32-bit)"
+        print(f"Index saved to disk!{mode_str}")
 
     def load_index(self, query=None, dir_path="index_data"):
 
@@ -161,37 +183,47 @@ class SearchEngine:
         self.doc_store = metadata["doc_store"]
         self.doc_count = metadata["doc_count"]
 
-        print("Index loaded from disk!")
+        mode_str = " (VByte Compressed)" if metadata.get("compressed") else " (Raw 32-bit)"
+        print(f"Index loaded from disk!{mode_str}")
 
     def get_postings(self, token, dir_path="index_data"):
         if not hasattr(self, "vocab") or token not in self.vocab:
             return {}
 
-        postings_path = os.path.join(dir_path, "postings.bin")
-        if not os.path.exists(postings_path):
-            return {}
+        postings_vbyte = os.path.join(dir_path, "postings.vbyte")
+        postings_bin = os.path.join(dir_path, "postings.bin")
 
-        postings = defaultdict(list)
-        with open(postings_path, "rb") as postings_file:
-            offset = self.vocab[token]
-            postings_file.seek(offset)
+        if os.path.exists(postings_vbyte):
+            with open(postings_vbyte, "rb") as f:
+                offset = self.vocab[token]
+                f.seek(offset)
+                payload_len = struct.unpack("I", f.read(4))[0]
+                compressed = f.read(payload_len)
+                return decompress_postings_list(compressed)
+        elif os.path.exists(postings_bin):
+            postings = defaultdict(list)
+            with open(postings_bin, "rb") as postings_file:
+                offset = self.vocab[token]
+                postings_file.seek(offset)
 
-            # Read number of documents
-            num_docs = struct.unpack("I", postings_file.read(4))[0]
+                # Read number of documents
+                num_docs = struct.unpack("I", postings_file.read(4))[0]
 
-            for _ in range(num_docs):
-                doc_id, tf = struct.unpack("II", postings_file.read(8))
+                for _ in range(num_docs):
+                    doc_id, tf = struct.unpack("II", postings_file.read(8))
 
-                pos_count = struct.unpack("I", postings_file.read(4))[0]
+                    pos_count = struct.unpack("I", postings_file.read(4))[0]
 
-                positions = []
-                for _ in range(pos_count):
-                    pos = struct.unpack("I", postings_file.read(4))[0]
-                    positions.append(pos)
+                    positions = []
+                    for _ in range(pos_count):
+                        pos = struct.unpack("I", postings_file.read(4))[0]
+                        positions.append(pos)
 
-                postings[doc_id] = positions
+                    postings[doc_id] = positions
 
-        return postings
+            return postings
+
+        return {}
 
     def build_index(self):
         if not os.path.exists(self.db_path) or os.path.getsize(self.db_path) == 0:
@@ -450,10 +482,11 @@ if __name__ == "__main__":
     parser.add_argument("--algo", choices=["bm25", "tfidf", "simple"], default="bm25", help="Ranking algorithm")
     parser.add_argument("--db", default="enwiki-20170820.db", help="Path to SQLite database")
     parser.add_argument("--force", action="store_true", help="Force rebuild index from database")
+    parser.add_argument("--compress", action="store_true", help="Use Variable Byte (VByte) + Delta postings compression")
     args = parser.parse_args()
 
     engine = SearchEngine(args.db)
-    engine.setup(query=args.query, force=args.force)
+    engine.setup(query=args.query, force=args.force, compress=args.compress)
 
     start_time = time.perf_counter()
     if args.algo == "bm25":

@@ -118,3 +118,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     run_benchmarks(db_path=args.db, iterations=args.iter)
+

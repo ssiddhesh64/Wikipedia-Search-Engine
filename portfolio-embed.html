@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,32 +19,55 @@
         }
     </script>
     <style>
-        mark { background-color: #fef08a; color: #854d0e; padding: 0 4px; border-radius: 4px; font-weight: 600; }
-        .dark mark { background-color: #ca8a04; color: #fef9c3; }
+        mark {
+            background-color: #fef08a;
+            color: #854d0e;
+            padding: 0 4px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .dark mark {
+            background-color: #ca8a04;
+            color: #fef9c3;
+        }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen p-4 md:p-8 font-sans transition-colors duration-200">
+
+<body
+    class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen p-4 md:p-8 font-sans transition-colors duration-200">
 
     <div class="max-w-4xl mx-auto space-y-6">
         <!-- Header Card -->
-        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div
+            class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                 <div class="flex items-center space-x-3 mb-1">
-                    <span class="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center text-white font-bold text-sm shadow-xs">IR</span>
+                    <span
+                        class="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center text-white font-bold text-sm shadow-xs">IR</span>
                     <h1 class="text-xl font-bold tracking-tight">Wikipedia IR Engine</h1>
-                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Live Client Demo</span>
+                    <span
+                        class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Live
+                        Client Demo</span>
                 </div>
                 <p class="text-xs text-slate-500 dark:text-slate-400">
-                    Disk Inverted Index • Binary Postings Offset Packing • Okapi BM25 Ranking • Zero External Dependencies
+                    Disk Inverted Index • Binary Postings Offset Packing • Okapi BM25 Ranking • Zero External
+                    Dependencies
                 </p>
             </div>
             <div class="flex items-center space-x-2">
                 <nav class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
-                    <button id="btn-tab-demo" onclick="setTab('demo')" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-300 shadow-xs">Live Search</button>
-                    <button id="btn-tab-arch" onclick="setTab('arch')" class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900">Architecture</button>
-                    <button id="btn-tab-spec" onclick="setTab('spec')" class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900">Binary Spec</button>
+                    <button id="btn-tab-demo" onclick="setTab('demo')"
+                        class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-300 shadow-xs">Live
+                        Search</button>
+                    <button id="btn-tab-arch" onclick="setTab('arch')"
+                        class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900">Architecture</button>
+                    <button id="btn-tab-spec" onclick="setTab('spec')"
+                        class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900">Binary
+                        Spec</button>
                 </nav>
-                <button onclick="toggleDark()" class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <button onclick="toggleDark()"
+                    class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
                     <span id="theme-btn">🌙</span>
                 </button>
             </div>
@@ -51,32 +75,37 @@
 
         <!-- TAB 1: LIVE SEARCH DEMO (IN-BROWSER BM25 ENGINE) -->
         <section id="tab-demo" class="space-y-4">
-            <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div
+                class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div class="relative">
-                    <input 
-                        type="text" 
-                        id="search-input" 
+                    <input type="text" id="search-input"
                         placeholder="Search corpus (e.g. 'machine learning', 'search engine', 'neural', 'database')..."
-                        value="machine learning"
-                        autocomplete="off"
+                        value="machine learning" autocomplete="off"
                         class="w-full text-base md:text-lg pl-11 pr-24 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 focus:outline-none focus:ring-2 focus:ring-sky-500 transition"
-                        oninput="runSearch()"
-                    />
+                        oninput="runSearch()" />
                     <span class="absolute left-4 top-3.5 text-slate-400">🔍</span>
-                    <button onclick="runSearch()" class="absolute right-2 top-2 px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition">Search</button>
+                    <button onclick="runSearch()"
+                        class="absolute right-2 top-2 px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition">Search</button>
                 </div>
 
-                <div class="flex flex-wrap items-center justify-between gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs">
+                <div
+                    class="flex flex-wrap items-center justify-between gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs">
                     <div class="flex items-center space-x-2">
                         <span class="text-slate-500 font-medium">Scoring Algorithm:</span>
-                        <div class="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-slate-100 dark:bg-slate-800">
-                            <button id="mode-bm25" onclick="setMode('bm25')" class="px-2.5 py-1 rounded-md bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-300 font-semibold shadow-xs">Okapi BM25</button>
-                            <button id="mode-tfidf" onclick="setMode('tfidf')" class="px-2.5 py-1 rounded-md text-slate-600 dark:text-slate-400">TF-IDF</button>
+                        <div
+                            class="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-slate-100 dark:bg-slate-800">
+                            <button id="mode-bm25" onclick="setMode('bm25')"
+                                class="px-2.5 py-1 rounded-md bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-300 font-semibold shadow-xs">Okapi
+                                BM25</button>
+                            <button id="mode-tfidf" onclick="setMode('tfidf')"
+                                class="px-2.5 py-1 rounded-md text-slate-600 dark:text-slate-400">TF-IDF</button>
                         </div>
                     </div>
                     <div class="flex items-center space-x-3 text-slate-500 font-mono">
                         <span id="results-count">Found 0 results</span>
-                        <span id="latency-badge" class="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800">⚡ 0.00 ms</span>
+                        <span id="latency-badge"
+                            class="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800">⚡
+                            0.00 ms</span>
                     </div>
                 </div>
             </div>
@@ -87,47 +116,67 @@
 
         <!-- TAB 2: ARCHITECTURE PIPELINE -->
         <section id="tab-arch" class="hidden space-y-4">
-            <div class="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+            <div
+                class="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
                 <div>
                     <h2 class="text-lg font-bold">End-to-End Search Engine Pipeline</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Designed for sub-millisecond retrieval without exhausting RAM on multi-gigabyte corpora.</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Designed for sub-millisecond retrieval
+                        without exhausting RAM on multi-gigabyte corpora.</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                    <div class="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
-                        <div class="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-300 flex items-center justify-center font-bold">1</div>
+                    <div
+                        class="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
+                        <div
+                            class="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-300 flex items-center justify-center font-bold">
+                            1</div>
                         <div class="font-bold text-sm text-slate-900 dark:text-slate-100">Batch Ingestion</div>
-                        <p class="text-slate-500">Streams articles from SQLite in chunks of 1,000 to prevent OOM errors on large 21GB database files.</p>
+                        <p class="text-slate-500">Streams articles from SQLite in chunks of 1,000 to prevent OOM errors
+                            on large 21GB database files.</p>
                     </div>
-                    <div class="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
-                        <div class="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-300 flex items-center justify-center font-bold">2</div>
+                    <div
+                        class="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
+                        <div
+                            class="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-300 flex items-center justify-center font-bold">
+                            2</div>
                         <div class="font-bold text-sm text-slate-900 dark:text-slate-100">Binary Serialization</div>
-                        <p class="text-slate-500">Packs postings lists into raw binary structs (<code class="text-purple-400">uint32</code>) and records byte offsets in a compact vocabulary map.</p>
+                        <p class="text-slate-500">Packs postings lists into raw binary structs (<code
+                                class="text-purple-400">uint32</code>) and records byte offsets in a compact vocabulary
+                            map.</p>
                     </div>
-                    <div class="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
-                        <div class="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-300 flex items-center justify-center font-bold">3</div>
+                    <div
+                        class="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
+                        <div
+                            class="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-300 flex items-center justify-center font-bold">
+                            3</div>
                         <div class="font-bold text-sm text-slate-900 dark:text-slate-100">O(1) Seek Retrieval</div>
-                        <p class="text-slate-500">Given query tokens, the engine seeks directly to byte offsets in <code class="text-emerald-400">postings.bin</code>, scoring candidates in microseconds.</p>
+                        <p class="text-slate-500">Given query tokens, the engine seeks directly to byte offsets in <code
+                                class="text-emerald-400">postings.bin</code>, scoring candidates in microseconds.</p>
                     </div>
                 </div>
 
                 <div class="p-4 rounded-xl bg-slate-900 text-slate-200 font-mono text-xs border border-slate-800">
                     <div class="text-amber-400 font-bold mb-2">// Okapi BM25 Ranking Formula</div>
-                    <div class="text-slate-400">Score(D, Q) = ∑ IDF(q) * [ tf * (k1 + 1) ] / [ tf + k1 * (1 - b + b * (|D| / avgdl)) ]</div>
-                    <div class="text-slate-500 mt-1">k1 = 1.5 (term saturation), b = 0.75 (document length penalty), avgdl = average corpus length</div>
+                    <div class="text-slate-400">Score(D, Q) = ∑ IDF(q) * [ tf * (k1 + 1) ] / [ tf + k1 * (1 - b + b *
+                        (|D| / avgdl)) ]</div>
+                    <div class="text-slate-500 mt-1">k1 = 1.5 (term saturation), b = 0.75 (document length penalty),
+                        avgdl = average corpus length</div>
                 </div>
             </div>
         </section>
 
         <!-- TAB 3: BINARY STORAGE SPEC -->
         <section id="tab-spec" class="hidden space-y-4">
-            <div class="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+            <div
+                class="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
                 <div>
                     <h2 class="text-lg font-bold">Binary Disk Layout (postings.bin)</h2>
-                    <p class="text-xs text-slate-500 mt-1">Each token in <code class="text-sky-500">vocab.pkl</code> maps to a byte offset pointing to this packed binary block:</p>
+                    <p class="text-xs text-slate-500 mt-1">Each token in <code class="text-sky-500">vocab.pkl</code>
+                        maps to a byte offset pointing to this packed binary block:</p>
                 </div>
 
-                <div class="p-5 rounded-xl bg-slate-900 font-mono text-xs text-slate-200 border border-slate-800 space-y-2">
+                <div
+                    class="p-5 rounded-xl bg-slate-900 font-mono text-xs text-slate-200 border border-slate-800 space-y-2">
                     <div class="text-sky-400 font-bold">[Offset: vocab[token]]</div>
                     <div class="pl-4 border-l border-slate-700 space-y-1.5">
                         <div class="flex items-center space-x-2">
@@ -138,17 +187,23 @@
                         <div class="pl-4 border-l border-slate-600 space-y-1.5">
                             <div class="text-slate-400">For each document:</div>
                             <div class="pl-4 border-l border-slate-500 space-y-1">
-                                <div>├── <span class="text-emerald-400 font-bold">doc_id</span> <span class="text-slate-500">(uint32, 4 bytes)</span></div>
-                                <div>├── <span class="text-amber-400 font-bold">term_frequency</span> <span class="text-slate-500">(uint32, 4 bytes)</span></div>
-                                <div>├── <span class="text-indigo-400 font-bold">positions_count</span> <span class="text-slate-500">(uint32, 4 bytes)</span></div>
-                                <div>└── <span class="text-rose-400 font-bold">positions[tf]</span> <span class="text-slate-500">(list of uint32, tf * 4 bytes)</span></div>
+                                <div>├── <span class="text-emerald-400 font-bold">doc_id</span> <span
+                                        class="text-slate-500">(uint32, 4 bytes)</span></div>
+                                <div>├── <span class="text-amber-400 font-bold">term_frequency</span> <span
+                                        class="text-slate-500">(uint32, 4 bytes)</span></div>
+                                <div>├── <span class="text-indigo-400 font-bold">positions_count</span> <span
+                                        class="text-slate-500">(uint32, 4 bytes)</span></div>
+                                <div>└── <span class="text-rose-400 font-bold">positions[tf]</span> <span
+                                        class="text-slate-500">(list of uint32, tf * 4 bytes)</span></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="text-xs text-slate-500">
-                    💡 <strong>Performance Advantage:</strong> Unlike JSON or SQLite string matching, binary struct seeks bypass deserialization overhead, enabling single-digit millisecond response times even under high query concurrency.
+                    💡 <strong>Performance Advantage:</strong> Unlike JSON or SQLite string matching, binary struct
+                    seeks bypass deserialization overhead, enabling single-digit millisecond response times even under
+                    high query concurrency.
                 </div>
             </div>
         </section>
@@ -321,4 +376,5 @@
         runSearch();
     </script>
 </body>
+
 </html>

@@ -13,7 +13,7 @@ A high-performance, disk-based information retrieval (IR) engine built from scra
 
 The project includes an interactive web dashboard and REST API powered entirely by Python's built-in `http.server`:
 
-- **Instant search** with real-time response time tracking (`⚡ < 1 ms`)
+- **Instant search** with real-time response time tracking (`< 1 ms`)
 - **Interactive algorithm toggle**: compare **Okapi BM25**, **TF-IDF**, and **Simple Frequency** side-by-side
 - **Contextual snippet extraction** with dynamic query term highlighting
 - **Architecture visualizer** detailing binary postings layout and query pipelines
@@ -97,9 +97,9 @@ python3 search_engine.py --query "machine learning" --algo bm25
 
 **Example CLI Output:**
 ```text
-🔍 Query: 'machine learning' | Algorithm: BM25
+Query: 'machine learning' | Algorithm: BM25
 
-⚡ Found 1 result(s) in 0.03 ms:
+Found 1 result(s) in 0.03 ms:
 ────────────────────────────────────────────────────────────
 [1] Machine learning (ID: 1) ─ Score: 9.9363
     Machine learning is a field of inquiry devoted to understanding and building methods that learn from data. Machine learning algorithms build a model based on sample data, known as training ...

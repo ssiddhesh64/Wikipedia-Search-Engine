@@ -113,7 +113,7 @@ HTML_PAGE = """<!DOCTYPE html>
             <!-- Latency / Meta Pill -->
             <div id="search-metrics" class="hidden mb-4 flex items-center justify-between px-2 text-xs text-slate-500 dark:text-slate-400 font-mono">
                 <span id="match-count">Found 0 results</span>
-                <span id="query-time" class="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 font-bold">⚡ 0.00 ms</span>
+                <span id="query-time" class="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 font-bold"> 0.00 ms</span>
             </div>
 
             <!-- Results List -->
@@ -245,7 +245,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
                 document.getElementById('search-metrics').classList.remove('hidden');
                 document.getElementById('match-count').textContent = `Found ${data.results.length} result(s)`;
-                document.getElementById('query-time').textContent = `⚡ ${data.latency_ms.toFixed(2)} ms`;
+                document.getElementById('query-time').textContent = ` ${data.latency_ms.toFixed(2)} ms`;
 
                 if (data.results.length === 0) {
                     resultsContainer.innerHTML = `
@@ -502,11 +502,10 @@ def html_escape(text):
         .replace("'", "&#39;")
     )
 
-
 def run_server():
-    print(f"🚀 Starting Wikipedia Search Engine server on http://localhost:{PORT}")
-    print(f"📁 Database: {DB_PATH}")
-    print(f"⚡ Press Ctrl+C to stop.")
+    print(f"Starting Wikipedia Search Engine server on http://localhost:{PORT}")
+    print(f"Database: {DB_PATH}")
+    print(f"Press Ctrl+C to stop.")
     with socketserver.TCPServer(("", PORT), SearchEngineRequestHandler) as httpd:
         httpd.allow_reuse_address = True
         try:

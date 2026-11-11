@@ -78,14 +78,19 @@ HTML_PAGE = """<!DOCTYPE html>
                         id="query-input"
                         placeholder="Search Wikipedia (e.g. 'machine learning', 'search engine', 'quantum')..."
                         value="machine learning"
+                        autocomplete="off"
                         class="w-full text-lg pl-12 pr-28 py-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:focus:ring-sky-400 transition"
                         onkeydown="if(event.key === 'Enter') executeSearch()"
+                        oninput="onQueryInput(this.value)"
                     />
                     <span class="absolute left-4 top-4 text-slate-400 text-lg">🔍</span>
                     <button 
                         onclick="executeSearch()"
                         class="absolute right-2 top-2 px-5 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-medium text-sm transition shadow-sm"
                     >Search</button>
+
+                    <!-- Autocomplete Dropdown -->
+                    <div id="suggest-box" class="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg z-30 hidden overflow-hidden divide-y divide-slate-100 dark:divide-slate-800"></div>
                 </div>
 
                 <!-- Algorithm & Stats Bar -->
@@ -293,6 +298,54 @@ HTML_PAGE = """<!DOCTYPE html>
             }[tag]));
         }
 
+        let suggestTimeout = null;
+
+        function onQueryInput(val) {
+            clearTimeout(suggestTimeout);
+            const box = document.getElementById('suggest-box');
+            val = val.trim();
+            if (!val || val.length < 2) {
+                box.classList.add('hidden');
+                return;
+            }
+
+            suggestTimeout = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/suggest?q=${encodeURIComponent(val)}`);
+                    const data = await res.json();
+                    if (data.suggestions && data.suggestions.length > 0) {
+                        box.innerHTML = data.suggestions.map(s => `
+                            <div 
+                                class="px-4 py-2 hover:bg-sky-50 dark:hover:bg-slate-800 cursor-pointer text-sm font-medium flex items-center justify-between"
+                                onclick="selectSuggestion('${escapeHtml(s)}')"
+                            >
+                                <span>🔍 ${escapeHtml(s)}</span>
+                                <span class="text-xs text-slate-400">suggestion</span>
+                            </div>
+                        `).join('');
+                        box.classList.remove('hidden');
+                    } else {
+                        box.classList.add('hidden');
+                    }
+                } catch (e) {
+                    box.classList.add('hidden');
+                }
+            }, 150);
+        }
+
+        function selectSuggestion(word) {
+            document.getElementById('query-input').value = word;
+            document.getElementById('suggest-box').classList.add('hidden');
+            executeSearch();
+        }
+
+        document.addEventListener('click', (e) => {
+            const box = document.getElementById('suggest-box');
+            if (box && !e.target.closest('#query-input') && !e.target.closest('#suggest-box')) {
+                box.classList.add('hidden');
+            }
+        });
+
         // Initialize on load
         fetchStats();
         executeSearch();
@@ -323,6 +376,12 @@ class SearchEngineRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "db_path": engine.db_path,
             }
             self._send_json(stats)
+            return
+
+        elif path == "/api/suggest":
+            prefix = query_params.get("q", [""])[0].strip()
+            suggestions = engine.suggest(prefix, limit=6)
+            self._send_json({"prefix": prefix, "suggestions": suggestions})
             return
 
         elif path == "/api/search":
@@ -443,3 +502,4 @@ def run_server():
 
 if __name__ == "__main__":
     run_server()
+

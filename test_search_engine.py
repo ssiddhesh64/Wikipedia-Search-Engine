@@ -100,6 +100,10 @@ class TestSearchEngine(unittest.TestCase):
         phrase_docs = self.engine.phrase_search("machine learning")
         self.assertIn(1, phrase_docs)
 
+    def test_suggest_autocomplete(self):
+        suggestions = self.engine.suggest("mach")
+        self.assertIn("machine", suggestions)
+
     def test_snippet_generation(self):
         text = "Machine learning algorithms build a mathematical model based on sample data."
         snippet = self.engine.generate_snippet(text, ["machine", "learning"])
@@ -109,3 +113,4 @@ class TestSearchEngine(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

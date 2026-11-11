@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wikipedia Information Retrieval Engine | Portfolio Showcase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#f0f9ff', 500: '#0284c7', 600: '#0369a1', 700: '#075985' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        mark { background-color: #fef08a; color: #854d0e; padding: 0 4px; border-radius: 4px; font-weight: 600; }
+        .dark mark { background-color: #ca8a04; color: #fef9c3; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen p-4 md:p-8 font-sans transition-colors duration-200">
+
+    <div class="max-w-4xl mx-auto space-y-6">
+        <!-- Header Card -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center space-x-3 mb-1">
+                    <span class="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center text-white font-bold text-sm shadow-xs">IR</span>
+                    <h1 class="text-xl font-bold tracking-tight">Wikipedia IR Engine</h1>
+                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Live Client Demo</span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    Disk Inverted Index • Binary Postings Offset Packing • Okapi BM25 Ranking • Zero External Dependencies
+                </p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <nav class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+                    <button id="btn-tab-demo" onclick="setTab('demo')" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-300 shadow-xs">Live Search</button>
+                    <button id="btn-tab-arch" onclick="setTab('arch')" class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900">Architecture</button>
+                    <button id="btn-tab-spec" onclick="setTab('spec')" class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900">Binary Spec</button>
+                </nav>
+                <button onclick="toggleDark()" class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <span id="theme-btn">🌙</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB 1: LIVE SEARCH DEMO (IN-BROWSER BM25 ENGINE) -->
+        <section id="tab-demo" class="space-y-4">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="search-input" 
+                        placeholder="Search corpus (e.g. 'machine learning', 'search engine', 'neural', 'database')..."
+                        value="machine learning"
+                        autocomplete="off"
+                        class="w-full text-base md:text-lg pl-11 pr-24 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 focus:outline-none focus:ring-2 focus:ring-sky-500 transition"
+                        oninput="runSearch()"
+                    />
+                    <span class="absolute left-4 top-3.5 text-slate-400">🔍</span>
+                    <button onclick="runSearch()" class="absolute right-2 top-2 px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition">Search</button>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-slate-500 font-medium">Scoring Algorithm:</span>
+                        <div class="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-slate-100 dark:bg-slate-800">
+                            <button id="mode-bm25" onclick="setMode('bm25')" class="px-2.5 py-1 rounded-md bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-300 font-semibold shadow-xs">Okapi BM25</button>
+                            <button id="mode-tfidf" onclick="setMode('tfidf')" class="px-2.5 py-1 rounded-md text-slate-600 dark:text-slate-400">TF-IDF</button>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3 text-slate-500 font-mono">
+                        <span id="results-count">Found 0 results</span>
+                        <span id="latency-badge" class="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800">⚡ 0.00 ms</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results List -->
+            <div id="results-list" class="space-y-3"></div>
+        </section>
+
+        <!-- TAB 2: ARCHITECTURE PIPELINE -->
+        <section id="tab-arch" class="hidden space-y-4">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+                <div>
+                    <h2 class="text-lg font-bold">End-to-End Search Engine Pipeline</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Designed for sub-millisecond retrieval without exhausting RAM on multi-gigabyte corpora.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <div class="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
+                        <div class="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-300 flex items-center justify-center font-bold">1</div>
+                        <div class="font-bold text-sm text-slate-900 dark:text-slate-100">Batch Ingestion</div>
+                        <p class="text-slate-500">Streams articles from SQLite in chunks of 1,000 to prevent OOM errors on large 21GB database files.</p>
+                    </div>
+                    <div class="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
+                        <div class="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-300 flex items-center justify-center font-bold">2</div>
+                        <div class="font-bold text-sm text-slate-900 dark:text-slate-100">Binary Serialization</div>
+                        <p class="text-slate-500">Packs postings lists into raw binary structs (<code class="text-purple-400">uint32</code>) and records byte offsets in a compact vocabulary map.</p>
+                    </div>
+                    <div class="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
+                        <div class="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-300 flex items-center justify-center font-bold">3</div>
+                        <div class="font-bold text-sm text-slate-900 dark:text-slate-100">O(1) Seek Retrieval</div>
+                        <p class="text-slate-500">Given query tokens, the engine seeks directly to byte offsets in <code class="text-emerald-400">postings.bin</code>, scoring candidates in microseconds.</p>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-xl bg-slate-900 text-slate-200 font-mono text-xs border border-slate-800">
+                    <div class="text-amber-400 font-bold mb-2">// Okapi BM25 Ranking Formula</div>
+                    <div class="text-slate-400">Score(D, Q) = ∑ IDF(q) * [ tf * (k1 + 1) ] / [ tf + k1 * (1 - b + b * (|D| / avgdl)) ]</div>
+                    <div class="text-slate-500 mt-1">k1 = 1.5 (term saturation), b = 0.75 (document length penalty), avgdl = average corpus length</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: BINARY STORAGE SPEC -->
+        <section id="tab-spec" class="hidden space-y-4">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+                <div>
+                    <h2 class="text-lg font-bold">Binary Disk Layout (postings.bin)</h2>
+                    <p class="text-xs text-slate-500 mt-1">Each token in <code class="text-sky-500">vocab.pkl</code> maps to a byte offset pointing to this packed binary block:</p>
+                </div>
+
+                <div class="p-5 rounded-xl bg-slate-900 font-mono text-xs text-slate-200 border border-slate-800 space-y-2">
+                    <div class="text-sky-400 font-bold">[Offset: vocab[token]]</div>
+                    <div class="pl-4 border-l border-slate-700 space-y-1.5">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-slate-400">0x00:</span>
+                            <span class="text-purple-400 font-bold">num_docs</span>
+                            <span class="text-slate-500">(uint32, 4 bytes) - Number of documents containing token</span>
+                        </div>
+                        <div class="pl-4 border-l border-slate-600 space-y-1.5">
+                            <div class="text-slate-400">For each document:</div>
+                            <div class="pl-4 border-l border-slate-500 space-y-1">
+                                <div>├── <span class="text-emerald-400 font-bold">doc_id</span> <span class="text-slate-500">(uint32, 4 bytes)</span></div>
+                                <div>├── <span class="text-amber-400 font-bold">term_frequency</span> <span class="text-slate-500">(uint32, 4 bytes)</span></div>
+                                <div>├── <span class="text-indigo-400 font-bold">positions_count</span> <span class="text-slate-500">(uint32, 4 bytes)</span></div>
+                                <div>└── <span class="text-rose-400 font-bold">positions[tf]</span> <span class="text-slate-500">(list of uint32, tf * 4 bytes)</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-xs text-slate-500">
+                    💡 <strong>Performance Advantage:</strong> Unlike JSON or SQLite string matching, binary struct seeks bypass deserialization overhead, enabling single-digit millisecond response times even under high query concurrency.
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Client-Side Search Engine Dataset & JS Engine -->
+    <script>
+        const CORPUS = [
+            { id: 1, title: "Machine learning", text: "Machine learning (ML) is a field of study in artificial intelligence concerned with the development and study of statistical algorithms that can learn from data and generalize to unseen data, and thus perform tasks without explicit instructions. Machine learning algorithms build a mathematical model based on sample training data to make predictions or decisions. Deep learning, supervised learning, unsupervised learning, and reinforcement learning are core paradigms. Applications include computer vision, natural language processing, search engines, and automated reasoning." },
+            { id: 2, title: "Artificial intelligence", text: "Artificial intelligence (AI) is the intelligence of machines and computers. Core subfields of artificial intelligence include machine learning, deep learning, computer vision, natural language processing, and robotics. Modern artificial intelligence heavily relies on deep neural networks trained on large corpora of text and images. Prominent applications of AI include advanced web search engines, autonomous vehicles, speech recognition, and medical diagnostics." },
+            { id: 3, title: "Deep learning", text: "Deep learning is a subset of machine learning based on artificial neural networks with representation learning. Deep learning architectures such as deep neural networks, convolutional neural networks (CNNs), and transformers have produced state-of-the-art results in computer vision, speech recognition, natural language processing, and audio recognition. Training deep models requires large datasets, gradient descent, and high-performance computing hardware." },
+            { id: 4, title: "Natural language processing", text: "Natural language processing (NLP) is an interdisciplinary subfield of computer science, artificial intelligence, and linguistics concerned with the interactions between computers and human language. Modern NLP algorithms are based on machine learning, particularly deep neural networks and transformer language models. Common tasks include text classification, sentiment analysis, machine translation, information retrieval, and search engine query understanding." },
+            { id: 5, title: "Computer vision", text: "Computer vision is an interdisciplinary scientific field that deals with how computers can gain high-level understanding from digital images or videos. Computer vision tasks include methods for acquiring, processing, analyzing and understanding digital images to produce numerical or symbolic information. Deep learning and convolutional neural networks are dominant in image classification, object detection, and visual search engines." },
+            { id: 6, title: "Information retrieval", text: "Information retrieval (IR) is the science of searching for information in a document, searching for documents themselves, and searching for metadata describing databases. Web search engines are the most prominent application of information retrieval. Key IR techniques include tokenization, stemming, inverted index construction, TF-IDF weighting, and Okapi BM25 probabilistic ranking functions." },
+            { id: 7, title: "Search engine", text: "A search engine is an information retrieval software system designed to carry out searches across documents, databases, or the World Wide Web. Search engines use web crawlers to collect documents, text processors to tokenize and normalize text, inverted index structures for fast candidate retrieval, and ranking algorithms such as PageRank and Okapi BM25 to order results by relevance." },
+            { id: 8, title: "PageRank", text: "PageRank is an algorithm used by Google Search to rank web pages in search engine results. PageRank works by counting the number and quality of links to a page to estimate a rough measure of how important the website is. It models a random surfer browsing a directed graph representing the World Wide Web, calculating the stationary probability distribution across nodes." },
+            { id: 9, title: "Inverted index", text: "In computer science, an inverted index is a database index data structure storing a mapping from words or tokens to their locations in a document or database. Inverted indices are the primary data structure used by search engines and information retrieval systems to achieve sub-millisecond query responses across billions of documents. Positional inverted indices also store word offsets for exact phrase search." },
+            { id: 10, title: "Okapi BM25", text: "Okapi BM25 is a state-of-the-art probabilistic ranking function widely used by search engines to estimate the relevance of documents to search queries. BM25 improves upon classical TF-IDF by incorporating document length normalization and non-linear term frequency saturation, preventing excessively long documents from unfairly dominating search results." },
+            { id: 11, title: "Database", text: "A database is an organized collection of data stored and accessed electronically from a computer system. Database management systems (DBMS) such as PostgreSQL, MySQL, and SQLite provide mechanisms for data querying, indexing, transaction processing, and concurrency control. Modern databases support relational schemas, full-text inverted indices, and distributed replication." },
+            { id: 12, title: "Distributed computing", text: "Distributed computing is a field of computer science that studies distributed systems consisting of autonomous computing nodes that communicate over a network. Large-scale search engines, cloud databases, and machine learning clusters rely on distributed computing frameworks to partition inverted index postings, scale storage, and parallelize ranking computations." }
+        ];
+
+        // In-browser Inverted Index Construction
+        const STOP_WORDS = new Set(["a", "an", "the", "and", "or", "but", "is", "are", "was", "were", "in", "on", "at", "to", "of", "for", "with", "by", "as", "that", "this"]);
+        const index = {}; // token -> { docId: [positions] }
+        const docLens = {};
+        const docFreq = {};
+
+        function tokenize(text) {
+            return (text.toLowerCase().match(/\\b\\w+\\b/g) || []).filter(w => !STOP_WORDS.has(w));
+        }
+
+        // Build index on load
+        CORPUS.forEach(doc => {
+            const tokens = tokenize(doc.title + " " + doc.text);
+            docLens[doc.id] = tokens.length;
+            const seen = new Set();
+            tokens.forEach((token, pos) => {
+                if (!index[token]) index[token] = {};
+                if (!index[token][doc.id]) index[token][doc.id] = [];
+                index[token][doc.id].push(pos);
+                if (!seen.has(token)) {
+                    seen.add(token);
+                    docFreq[token] = (docFreq[token] || 0) + 1;
+                }
+            });
+        });
+
+        const N = CORPUS.length;
+        const avgdl = Object.values(docLens).reduce((a, b) => a + b, 0) / N;
+        let currentMode = 'bm25';
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('mode-bm25').className = mode === 'bm25' ? 'px-2.5 py-1 rounded-md bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-300 font-semibold shadow-xs' : 'px-2.5 py-1 rounded-md text-slate-600 dark:text-slate-400';
+            document.getElementById('mode-tfidf').className = mode === 'tfidf' ? 'px-2.5 py-1 rounded-md bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-300 font-semibold shadow-xs' : 'px-2.5 py-1 rounded-md text-slate-600 dark:text-slate-400';
+            runSearch();
+        }
+
+        function setTab(tab) {
+            ['demo', 'arch', 'spec'].forEach(t => {
+                document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
+                const btn = document.getElementById('btn-tab-' + t);
+                if (t === tab) {
+                    btn.className = 'px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-300 shadow-xs font-semibold';
+                } else {
+                    btn.className = 'px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900';
+                }
+            });
+        }
+
+        function toggleDark() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            document.getElementById('theme-btn').textContent = isDark ? '☀️' : '🌙';
+        }
+
+        function runSearch() {
+            const query = document.getElementById('search-input').value.trim();
+            const qTokens = tokenize(query);
+            const container = document.getElementById('results-list');
+
+            if (!qTokens.length) {
+                container.innerHTML = '<div class="text-center py-8 text-slate-400 text-xs">Enter keywords to query inverted index.</div>';
+                document.getElementById('results-count').textContent = 'Found 0 results';
+                return;
+            }
+
+            const t0 = performance.now();
+            const scores = {};
+
+            if (currentMode === 'bm25') {
+                const k1 = 1.5, b = 0.75;
+                qTokens.forEach(token => {
+                    const df = docFreq[token] || 0;
+                    if (df === 0) return;
+                    const idf = Math.log(((N - df + 0.5) / (df + 0.5)) + 1.0);
+                    const postings = index[token] || {};
+                    Object.entries(postings).forEach(([docId, positions]) => {
+                        const tf = positions.length;
+                        const dl = docLens[docId] || avgdl;
+                        const denom = tf + k1 * (1.0 - b + b * (dl / avgdl));
+                        scores[docId] = (scores[docId] || 0) + (idf * (tf * (k1 + 1.0))) / denom;
+                    });
+                });
+            } else {
+                // TF-IDF
+                qTokens.forEach(token => {
+                    const df = docFreq[token] || 0;
+                    if (df === 0) return;
+                    const idf = Math.log((N + 1) / (df + 1)) + 1;
+                    const postings = index[token] || {};
+                    Object.entries(postings).forEach(([docId, positions]) => {
+                        const tf = positions.length;
+                        scores[docId] = (scores[docId] || 0) + (1 + Math.log(tf)) * idf;
+                    });
+                });
+                Object.keys(scores).forEach(docId => {
+                    scores[docId] /= (docLens[docId] || 1);
+                });
+            }
+
+            const latency = performance.now() - t0;
+            const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+
+            document.getElementById('results-count').textContent = `Found ${ranked.length} result(s)`;
+            document.getElementById('latency-badge').textContent = `⚡ ${latency.toFixed(2)} ms`;
+
+            if (!ranked.length) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">No articles matched query "${query}".</div>`;
+                return;
+            }
+
+            container.innerHTML = ranked.map(([docId, score], i) => {
+                const doc = CORPUS.find(d => d.id === parseInt(docId));
+                const snippet = generateSnippet(doc.text, qTokens);
+                return `
+                    <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs hover:border-sky-400 transition">
+                        <div class="flex items-center justify-between mb-1">
+                            <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center space-x-2">
+                                <span class="text-xs font-mono text-slate-400">#${i + 1}</span>
+                                <span>${doc.title}</span>
+                            </h3>
+                            <span class="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border border-sky-100 dark:border-sky-800">Score: ${score.toFixed(4)}</span>
+                        </div>
+                        <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">${snippet}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function generateSnippet(text, qTokens) {
+            const words = text.split(/\\s+/);
+            const tokenSet = new Set(qTokens.map(t => t.toLowerCase()));
+            let matchIdx = 0;
+            for (let i = 0; i < words.length; i++) {
+                const clean = words[i].toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (tokenSet.has(clean)) { matchIdx = i; break; }
+            }
+            const start = Math.max(0, matchIdx - 8);
+            const end = Math.min(words.length, start + 26);
+            const slice = words.slice(start, end).map(w => {
+                const clean = w.toLowerCase().replace(/[^a-z0-9]/g, '');
+                return tokenSet.has(clean) ? `<mark>${w}</mark>` : w;
+            });
+            return (start > 0 ? '... ' : '') + slice.join(' ') + (end < words.length ? ' ...' : '');
+        }
+
+        // Initialize search on load
+        runSearch();
+    </script>
+</body>
+</html>

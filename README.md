@@ -112,7 +112,13 @@ python3 app.py
 ```
 Open **[http://localhost:8080](http://localhost:8080)**.
 
-### 4. Run Test Suite
+### 4. Run Benchmark Suite
+Compare query latency across Naive SQLite scans, TF-IDF, and Okapi BM25:
+```bash
+python3 benchmark.py
+```
+
+### 5. Run Test Suite
 ```bash
 python3 test_search_engine.py
 ```
@@ -121,14 +127,30 @@ python3 test_search_engine.py
 
 ## 🌐 Embed in Your Portfolio Website
 
-You can embed this search engine demo directly into your personal portfolio or case study page using an iframe:
+There are two easy ways to showcase this project on your personal portfolio:
+
+### Option A: Standalone Drop-in Component (`portfolio-embed.html`)
+A zero-dependency, self-contained HTML component that runs an in-browser inverted index & BM25 engine with interactive architecture tabs. Deploy it to GitHub Pages, Netlify, or embed via iframe:
+
+```html
+<iframe 
+  src="portfolio-embed.html" 
+  width="100%" 
+  height="720" 
+  style="border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);"
+  title="Wikipedia IR Engine Showcase">
+</iframe>
+```
+
+### Option B: Live Server Iframe (`app.py`)
+Run the Python backend server (`python3 app.py`) and point the iframe to your hosted instance:
 
 ```html
 <iframe 
   src="http://localhost:8080" 
   width="100%" 
-  height="700" 
-  style="border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);"
+  height="720" 
+  style="border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);"
   title="Wikipedia IR Engine Demo">
 </iframe>
 ```

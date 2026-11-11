@@ -364,6 +364,18 @@ class SearchEngine:
         ranked = sorted(results.items(), key=lambda x: x[1], reverse=True)
         return ranked[:10]
 
+    def suggest(self, prefix, limit=5):
+        """Returns auto-complete keyword suggestions ranked by popularity (doc frequency)."""
+        if not prefix:
+            return []
+        prefix = prefix.lower().strip()
+        matches = [
+            token for token in self.vocab.keys()
+            if token.startswith(prefix)
+        ]
+        ranked = sorted(matches, key=lambda t: self.doc_freq.get(t, 0), reverse=True)
+        return ranked[:limit]
+
     def get_article_text(self, article_id):
         try:
             conn = sqlite3.connect(self.db_path)

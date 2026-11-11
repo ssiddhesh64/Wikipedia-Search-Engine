@@ -1,5 +1,9 @@
 enwiki-20170820.db
-index_data**
+index_data*
+test_wiki.db
+test_index_data*
+__pycache__/
+*.py[cod]
 .DS_Store
 *.log
 *.tmp

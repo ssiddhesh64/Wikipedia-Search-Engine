@@ -57,6 +57,7 @@ flowchart LR
 ## Dataset
 
 - Wikipedia dump (`enwiki-20170820.db`)
+- [Kaggle Dataset](https://www.kaggle.com/datasets/jkkphys/english-wikipedia-articles-20170820-sqlite/)
 
 ### Schema:
 ```sql

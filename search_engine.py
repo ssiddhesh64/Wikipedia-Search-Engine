@@ -30,7 +30,6 @@ STOP_WORDS = {
     "this",
 }
 
-
 class SearchEngine:
     def __init__(self, db_path):
         self.db_path = db_path
@@ -43,6 +42,7 @@ class SearchEngine:
         )  # Store document lengths for TF-IDF normalization
         # self.stop_words = set(stopwords.words("english"))
         self.stop_words = set(STOP_WORDS)  # Override with custom stop words
+        self.vocab = {}
 
     def index_exists(self, dir_path="index_data"):
         return (
@@ -119,6 +119,7 @@ class SearchEngine:
                         offset += 4
 
         # Save vocab
+        self.vocab = vocab
         with open(vocab_path, "wb") as f:
             pickle.dump(vocab, f)
 
@@ -134,7 +135,6 @@ class SearchEngine:
             pickle.dump(metadata, f)
 
         print("Index saved to disk!")
-        f.close()
 
     def load_index(self, query=None, dir_path="index_data"):
 
@@ -155,57 +155,64 @@ class SearchEngine:
         self.doc_count = metadata["doc_count"]
 
         print("Index loaded from disk!")
-        f.close()
 
     def get_postings(self, token, dir_path="index_data"):
-        if token not in self.vocab:
-            return []
+        if not hasattr(self, "vocab") or token not in self.vocab:
+            return {}
 
         postings_path = os.path.join(dir_path, "postings.bin")
-        # Open postings file (keep open for fast reads)
-        self.postings_file = open(postings_path, "rb")
-
-        offset = self.vocab[token]
-        self.postings_file.seek(offset)
-
-        # Read number of documents
-        num_docs = struct.unpack("I", self.postings_file.read(4))[0]
+        if not os.path.exists(postings_path):
+            return {}
 
         postings = defaultdict(list)
-        for _ in range(num_docs):
-            doc_id, tf = struct.unpack("II", self.postings_file.read(8))
+        with open(postings_path, "rb") as postings_file:
+            offset = self.vocab[token]
+            postings_file.seek(offset)
 
-            pos_count = struct.unpack("I", self.postings_file.read(4))[0]
+            # Read number of documents
+            num_docs = struct.unpack("I", postings_file.read(4))[0]
 
-            positions = []
-            for _ in range(pos_count):
-                pos = struct.unpack("I", self.postings_file.read(4))[0]
-                positions.append(pos)
+            for _ in range(num_docs):
+                doc_id, tf = struct.unpack("II", postings_file.read(8))
 
-            postings[doc_id] = positions
+                pos_count = struct.unpack("I", postings_file.read(4))[0]
 
-        self.postings_file.close()
+                positions = []
+                for _ in range(pos_count):
+                    pos = struct.unpack("I", postings_file.read(4))[0]
+                    positions.append(pos)
+
+                postings[doc_id] = positions
+
         return postings
 
     def build_index(self):
 
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT ARTICLE_ID, TITLE, SECTION_TEXT 
-            FROM ARTICLES
-        """
-        )
+        try:
+            cursor.execute(
+                """
+                    SELECT ARTICLE_ID, TITLE, SECTION_TEXT 
+                    FROM ARTICLES
+                """
+            )
+        except sqlite3.OperationalError as e:
+            print(f"Database error: {e}")
+            conn.close()
+            return
 
         seen_docs = set()
         i = 0
+        total_articles = 0
         while i < 100:  # Limit to first 100k articles for testing
             rows = cursor.fetchmany(1000)
             if not rows:
+                if i == 0:
+                    print("No articles found in database!")
                 break
             for article_id, title, section_text in rows:
-                text = title + " " + (section_text or "")
+                text = (title or "") + " " + (section_text or "")
                 tokens = self._process(text)
 
                 self.doc_store[article_id] = title
@@ -224,8 +231,9 @@ class SearchEngine:
                     for token in freq.keys():
                         self.doc_freq[token] += 1
 
+            total_articles += len(rows)
             i += 1
-            print(f"Processed {i * 1000} articles...")
+            print(f"Processed {total_articles} articles...")
         conn.close()
 
     def _idf(self, token):
@@ -241,8 +249,9 @@ class SearchEngine:
         results = defaultdict(int)
 
         for token in query_tokens:
-            for article_id, count in self.pos_index.get(token, {}).items():
-                results[article_id] += count
+            postings = self.pos_index[token] if token in self.pos_index else self.get_postings(token)
+            for article_id, positions in postings.items():
+                results[article_id] += len(positions)
 
         ranked = sorted(results.items(), key=lambda x: x[1], reverse=True)
 
@@ -253,7 +262,13 @@ class SearchEngine:
         if not query_tokens:
             return []
 
-        postings = [self.pos_index.get(token, {}) for token in query_tokens]
+        postings = [
+            self.pos_index[token] if token in self.pos_index else self.get_postings(token)
+            for token in query_tokens
+        ]
+
+        if not postings or not all(postings):
+            return []
 
         common_docs = set(postings[0].keys())
         for p in postings[1:]:
@@ -283,15 +298,15 @@ class SearchEngine:
 
         for token in query_tokens:
             idf = self._idf(token)
-            postings = self.get_postings(token)
+            postings = self.pos_index[token] if token in self.pos_index else self.get_postings(token)
             for article_id, positions in postings.items():
                 tf = len(positions)
                 results[article_id] += (1 + math.log(tf)) * idf
 
         for article_id in results:
-            results[article_id] /= self.doc_len[
-                article_id
-            ]  # Normalize by document length
+            doc_len = self.doc_len.get(article_id, 0)
+            if doc_len > 0:
+                results[article_id] /= doc_len  # Normalize by document length
 
         # phrase boost
         phrase_docs = self.phrase_search(query)
@@ -304,16 +319,18 @@ class SearchEngine:
         return ranked[:10]
 
     def print_results(self, results):
+        if not results:
+            print("No matching results found.")
+            return
         for article_id, score in results:
             print(
                 f"Article ID: {article_id}, Title: {self.doc_store.get(article_id, 'Unknown')}, Score: {score}"
             )
 
-
 if __name__ == "__main__":
     search_engine = SearchEngine("enwiki-20170820.db")
 
-    query = "machine learning"
+    query = "machine"
     search_engine.setup(query=query)  # Force rebuild index for testing
     results = search_engine.search_tfidf(query)
     print("\nSearch Results:")

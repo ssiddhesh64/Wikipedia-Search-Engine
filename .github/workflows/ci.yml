@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     steps:
     - uses: actions/checkout@v4
@@ -20,6 +20,7 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+        check-latest: false
 
     - name: Seed Database
       run: |
@@ -33,7 +34,11 @@ jobs:
       run: |
         python test_compression.py
 
+    - name: Run Stemmer Tests
+      run: |
+        python test_stemmer.py
+
     - name: Run Benchmarks
       run: |
-        python benchmark.py --iter 3
+        python benchmark.py --iter 2
 

@@ -8,6 +8,7 @@ import sqlite3
 import struct
 import time
 from compression import compress_postings_list, decompress_postings_list
+from stemmer import stem
 
 STOP_WORDS = {
     "a",
@@ -34,8 +35,9 @@ STOP_WORDS = {
 }
 
 class SearchEngine:
-    def __init__(self, db_path):
+    def __init__(self, db_path, use_stemming=False):
         self.db_path = db_path
+        self.use_stemming = use_stemming
         self.pos_index = defaultdict(lambda: defaultdict(list))
         self.doc_store = {}
         self.doc_freq = defaultdict(int)
@@ -90,6 +92,8 @@ class SearchEngine:
         text = self._normalize(text)
         tokens = self._tokenize(text)
         tokens = self._remove_stop_words(tokens)
+        if getattr(self, "use_stemming", False):
+            tokens = [stem(t) for t in tokens]
 
         return tokens
 

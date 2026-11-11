@@ -305,3 +305,4 @@ _default_stemmer = PorterStemmer()
 def stem(word: str) -> str:
     """Convenience helper to stem a single word."""
     return _default_stemmer.stem(word)
+

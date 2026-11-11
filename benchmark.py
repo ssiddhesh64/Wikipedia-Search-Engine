@@ -68,8 +68,8 @@ def benchmark_inverted_index(engine, search_fn, queries, iterations=5):
 
 
 def run_benchmarks(db_path="enwiki-20170820.db", iterations=10):
-    print(f"🚀 Running Information Retrieval Benchmark on '{db_path}'...")
-    print(f"⚡ Iterations per query: {iterations} | Queries tested: {len(BENCHMARK_QUERIES)}\n")
+    print(f"Running Information Retrieval Benchmark on '{db_path}'...")
+    print(f"Iterations per query: {iterations} | Queries tested: {len(BENCHMARK_QUERIES)}\n")
 
     engine = SearchEngine(db_path)
     engine.setup()

@@ -104,7 +104,7 @@
                     <div class="flex items-center space-x-3 text-slate-500 font-mono">
                         <span id="results-count">Found 0 results</span>
                         <span id="latency-badge"
-                            class="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800">⚡
+                            class="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800">
                             0.00 ms</span>
                     </div>
                 </div>
@@ -338,7 +338,7 @@
             const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1]);
 
             document.getElementById('results-count').textContent = `Found ${ranked.length} result(s)`;
-            document.getElementById('latency-badge').textContent = `⚡ ${latency.toFixed(2)} ms`;
+            document.getElementById('latency-badge').textContent = ` ${latency.toFixed(2)} ms`;
 
             if (!ranked.length) {
                 container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">No articles matched query "${query}".</div>`;

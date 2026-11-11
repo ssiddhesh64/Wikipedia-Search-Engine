@@ -161,12 +161,15 @@ class SearchEngine:
             "doc_store": self.doc_store,
             "doc_count": self.doc_count,
             "compressed": compress,
+            "use_stemming": getattr(self, "use_stemming", False),
         }
 
         with open(metadata_path, "wb") as f:
             pickle.dump(metadata, f)
 
         mode_str = " (VByte Compressed)" if compress else " (Raw 32-bit)"
+        if getattr(self, "use_stemming", False):
+            mode_str += " [Stemmed]"
         print(f"Index saved to disk!{mode_str}")
 
     def load_index(self, query=None, dir_path="index_data"):
@@ -186,8 +189,11 @@ class SearchEngine:
         self.doc_freq = defaultdict(int, metadata["doc_freq"])
         self.doc_store = metadata["doc_store"]
         self.doc_count = metadata["doc_count"]
+        self.use_stemming = metadata.get("use_stemming", False)
 
         mode_str = " (VByte Compressed)" if metadata.get("compressed") else " (Raw 32-bit)"
+        if self.use_stemming:
+            mode_str += " [Stemmed]"
         print(f"Index loaded from disk!{mode_str}")
 
     def get_postings(self, token, dir_path="index_data"):
@@ -467,7 +473,7 @@ class SearchEngine:
             return
 
         timing_str = f" in {elapsed_ms:.2f} ms" if elapsed_ms is not None else ""
-        print(f"\n⚡ Found {len(results)} result(s){timing_str}:\n" + "─" * 60)
+        print(f"\nFound {len(results)} result(s){timing_str}:\n" + "─" * 60)
 
         query_tokens = self._process(query) if query else []
 
@@ -487,9 +493,10 @@ if __name__ == "__main__":
     parser.add_argument("--db", default="enwiki-20170820.db", help="Path to SQLite database")
     parser.add_argument("--force", action="store_true", help="Force rebuild index from database")
     parser.add_argument("--compress", action="store_true", help="Use Variable Byte (VByte) + Delta postings compression")
+    parser.add_argument("--stem", action="store_true", help="Enable Porter stemming for morphological matching")
     args = parser.parse_args()
 
-    engine = SearchEngine(args.db)
+    engine = SearchEngine(args.db, use_stemming=args.stem)
     engine.setup(query=args.query, force=args.force, compress=args.compress)
 
     start_time = time.perf_counter()

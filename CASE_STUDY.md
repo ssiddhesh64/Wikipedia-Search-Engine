@@ -103,3 +103,4 @@ When discussing this project with engineering interviewers, focus on:
 1. **Trade-offs:** Explaining why binary postings offsets are chosen over loading the full index into RAM.
 2. **Compression:** Walking through the bitwise operations in VByte continuation bits and why delta gaps maximize compression ratios.
 3. **Information Retrieval Nuances:** Contrasting boolean search, TF-IDF, and BM25 length penalty mechanics.
+
